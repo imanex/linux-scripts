@@ -1,4 +1,9 @@
 #!/bin/bash
+
+SHARED=""
+STATIC=""
+SUDO=""
+
 case $@ in
   --gcc47) CC="/usr/bin/gcc-4.7" CXX="/usr/bin/g++-4.7" RANLIB="/usr/bin/gcc-ranlib-4.7"
           AR="/usr/bin/gcc-ar-4.7" NM="/usr/bin/gcc-nm-4.7" CCGO="/usr/bin/gccgo-4.7"
@@ -18,6 +23,11 @@ case $@ in
   --default-gcc) CC="/usr/bin/gcc" CXX="/usr/bin/g++" RANLIB="/usr/bin/gcc-ranlib"
           AR="/usr/bin/gcc-ar" NM="/usr/bin/gcc-nm"
   ;;
+  --shared) SHARED="--enable-shared" ;;
+  --static) STATIC="--enable-static" ;;
+  --sudo) SUDO="/usr/bin/sudo" ;;
+  dirs) doDIRS ;;
+  curdir) doCURDIR ;;
   *) printf "No GCC version argument supplied, using \'Default\'.\n" ;;
 esac
 
@@ -37,6 +47,50 @@ CXXFLAGS="$NATIVE_FLAGS $OPTIMIZE -pipe"
 
 # All the good stuff starts here. ;)
 
-make clean
-make distclean
-./configure --prefix=/usr --enable-shared && make && make install
+$SUDO make clean
+$SUDO make distclean
+$SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+
+function doDIRS () {
+  for every in `find * -maxdepth 0 -type d`; do 
+  cd $every
+  doIMNX "$every"
+  cd ..
+done
+}
+
+function doCURDIR () {
+  doIMNX $(basename $PWD)
+}
+
+function doIMNX () {
+  $SUDO make clean
+  $SUDO touch ../$1.clean
+  $SUDO make distclean
+  $SUDO touch ../$1.distclean
+  if [[ -e "./configure" ]]; then
+    if [[ -f "./configure" ]]; then
+      if [[ -x "./configure" ]]; then
+        $SUDO touch ../$1.configure
+        $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+      fi
+    fi
+  else
+    if [[ -e "./autogen.sh" ]]; then
+      if [[ -f "./autogen.sh" ]]; then
+        if [[ -x "./autogen.sh" ]]; then
+          $SUDO ../$1.autogen
+          $SUDO ./autogen.sh --prefix=/usr $SHARED $STATIC
+          if [[ -e "./configure" ]]; then
+            if [[ -f "./configure" ]]; then
+              if [[ -x "./configure" ]]; then
+                $SUDO touch ../$1.configure
+                $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+              fi
+            fi
+          fi
+        fi
+      fi
+    fi
+  fi
+}
