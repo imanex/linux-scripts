@@ -1,0 +1,32 @@
+#!/bin/bash
+
+firstPipe=/tmp/pipe0
+sudo mkfifo $firstPipe
+secondPipe=/tmp/pipe1
+sudo mkfifo $secondPipe
+thirdPipe=/tmp/pipe2
+sudo mkfifo $thirdPipe
+
+exec 3<>$firstPipe
+exec 4<>$secondPipe
+exec 5<>$thirdPipe
+
+for line in `read -r line`; do
+    echo $line >&3
+    while read -r line2; do
+        echo $line2 >&4
+        while read -r line3; do
+            echo $line3 >&5
+            while read -r line4; do
+                echo $line4 | sed "s/.*(\(.*\))./`tput setaf 4`\1`tput op`/g"
+            done < <(cat $thirdPipe)
+        done < <(cat $secondPipe)
+    done < <(cat $firstPipe)
+done < <(apt-get install build-essential)
+
+exec 5>&-
+exec 4>&-
+exec 3>&-
+rm $firstPipe  # closing pipe, closes session.
+rm $secondPipe # close first pipe first giving messages, lagged.
+rm $thirdPipe  # final pipe will close the session.

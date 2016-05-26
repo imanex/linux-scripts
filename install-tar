@@ -1,0 +1,8 @@
+export ARCH="x86_64"
+export CC="/usr/bin/gcc"
+export CXX="/usr/bin/g++"
+tar xvf $1
+cd $(echo $1 | sed 's/.tar.bz2//g')
+CFLAGS="$CFLAGS" CXXFLAGS="$CXXFLAGS" ./configure --prefix=/usr --enable-shared
+make && make install
+cd ..

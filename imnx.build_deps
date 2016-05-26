@@ -1,0 +1,15 @@
+#!/bin/bash
+
+export search="$@"
+apt-get update
+apt-cache search $search
+export str=""
+
+for this in `apt-cache search $search | awk '{ print $1 }'`;  do
+export str="$str $this"
+done
+
+apt-get install $str --reinstall
+apt-get build-dep $str
+
+unset search str
