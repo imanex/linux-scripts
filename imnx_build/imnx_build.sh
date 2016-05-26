@@ -47,9 +47,9 @@ CXXFLAGS="$NATIVE_FLAGS $OPTIMIZE -pipe"
 
 # All the good stuff starts here. ;)
 
-$SUDO make clean
-$SUDO make distclean
-$SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+#$SUDO make clean
+#$SUDO make distclean
+#$SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
 
 function doDIRS () {
   for every in `find * -maxdepth 0 -type d`; do 
