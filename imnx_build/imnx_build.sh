@@ -3,34 +3,25 @@
 SHARED=""
 STATIC=""
 SUDO=""
+TRIGGER_DODIRS="0"
+TRIGGER_DOIMNX="0"
 
-case $@ in
-  --gcc47) CC="/usr/bin/gcc-4.7" CXX="/usr/bin/g++-4.7" RANLIB="/usr/bin/gcc-ranlib-4.7"
-          AR="/usr/bin/gcc-ar-4.7" NM="/usr/bin/gcc-nm-4.7" CCGO="/usr/bin/gccgo-4.7"
-  ;;
-  --gcc48) CC="/usr/bin/gcc-4.8" CXX="/usr/bin/g++-4.8" RANLIB="/usr/bin/gcc-ranlib-4.8"
-          AR="/usr/bin/gcc-ar-4.8" NM="/usr/bin/gcc-nm-4.8" CCGO="/usr/bin/gccgo-4.8"
-  ;;
-  --gcc49) CC="/usr/bin/gcc-4.9" CXX="/usr/bin/g++-4.9" RANLIB="/usr/bin/gcc-ranlib-4.9"
-          AR="/usr/bin/gcc-ar-4.9" NM="/usr/bin/gcc-nm-4.9" CCGO="/usr/bin/gccgo-4.9"
-  ;;
-  --gcc5) CC="/usr/bin/gcc-5" CXX="/usr/bin/g++-5" RANLIB="/usr/bin/gcc-ranlib-5"
-          AR="/usr/bin/gcc-ar-5" NM="/usr/bin/gcc-nm-5" CCGO="/usr/bin/gccgo-5"
-  ;;
-  --gcc6) CC="/usr/bin/gcc-6" CXX="/usr/bin/g++-6" RANLIB="/usr/bin/gcc-ranlib-6"
-          AR="/usr/bin/gcc-ar-6g" NM="/usr/bin/gcc-nm-6" CCGO="/usr/bin/gccgo-6"
-  ;;
-  --default-gcc) CC="/usr/bin/gcc" CXX="/usr/bin/g++" RANLIB="/usr/bin/gcc-ranlib"
-          AR="/usr/bin/gcc-ar" NM="/usr/bin/gcc-nm"
-  ;;
-  --shared) SHARED="--enable-shared" ;;
-  --static) STATIC="--enable-static" ;;
-  --sudo) SUDO="/usr/bin/sudo" ;;
-  dirs) doDIRS ;;
-  curdir) doIMNX ;;
+for every in $@; do
+case $every in
+  -gcc47) CC="/usr/bin/gcc-4.7" CXX="/usr/bin/g++-4.7" RANLIB="/usr/bin/gcc-ranlib-4.7" AR="/usr/bin/gcc-ar-4.7" NM="/usr/bin/gcc-nm-4.7" CCGO="/usr/bin/gccgo-4.7" ;;
+  -gcc48) CC="/usr/bin/gcc-4.8" CXX="/usr/bin/g++-4.8" RANLIB="/usr/bin/gcc-ranlib-4.8" AR="/usr/bin/gcc-ar-4.8" NM="/usr/bin/gcc-nm-4.8" CCGO="/usr/bin/gccgo-4.8" ;;
+  -gcc49) CC="/usr/bin/gcc-4.9" CXX="/usr/bin/g++-4.9" RANLIB="/usr/bin/gcc-ranlib-4.9" AR="/usr/bin/gcc-ar-4.9" NM="/usr/bin/gcc-nm-4.9" CCGO="/usr/bin/gccgo-4.9" ;;
+  -gcc5) CC="/usr/bin/gcc-5" CXX="/usr/bin/g++-5" RANLIB="/usr/bin/gcc-ranlib-5" AR="/usr/bin/gcc-ar-5" NM="/usr/bin/gcc-nm-5" CCGO="/usr/bin/gccgo-5" ;;
+  -gcc6) CC="/usr/bin/gcc-6" CXX="/usr/bin/g++-6" RANLIB="/usr/bin/gcc-ranlib-6" AR="/usr/bin/gcc-ar-6g" NM="/usr/bin/gcc-nm-6" CCGO="/usr/bin/gccgo-6" ;;
+  -default-gcc) CC="/usr/bin/gcc" CXX="/usr/bin/g++" RANLIB="/usr/bin/gcc-ranlib" AR="/usr/bin/gcc-ar" NM="/usr/bin/gcc-nm" CCGO="/usr/bin/gccgo" ;;
+  -shared) SHARED="--enable-shared" ;;
+  -static) STATIC="--enable-static" ;;
+  -sudo) SUDO="/usr/bin/sudo" ;;
+  -dirmode) TRIGGER_DODIRS="1" ;;
+  -curdir) TRIGGER_DOIMNX="1" ;;
   *) printf "No GCC version argument supplied, using \'Default\'.\n" ;;
 esac
-
+done
 ARCH="x86_64"
 OPTIMIZE="-O3" # O3, O2, O1, Os. = Different presets.
 BUILD_HOST_TARGET="x86_64-pc-linux-gnu"
@@ -51,31 +42,32 @@ CXXFLAGS="$NATIVE_FLAGS $OPTIMIZE -pipe"
 #$SUDO make distclean
 #$SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
 
-function doDIRS () {
+function dirMode () {
+  printf "Directory mode selected (--dir-mode).\n"
   for every in `find * -maxdepth 0 -type d`; do 
   cd $every
-    $SUDO make clean
-    $SUDO touch ../$(basename $PWD).clean
-    $SUDO make distclean
-    $SUDO touch ../$(basename $PWD).distclean
+    make clean
+    touch ../$(basename $PWD).clean
+    make distclean
+    touch ../$(basename $PWD).distclean
     if [[ -e "./configure" ]]; then
       if [[ -f "./configure" ]]; then
         if [[ -x "./configure" ]]; then
-          $SUDO touch ../$(basename $PWD).configure
-          $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+          touch ../$(basename $PWD).configure
+          ./configure --prefix=/usr $SHARED $STATIC && make && make install
         fi
       fi
     else
       if [[ -e "./autogen.sh" ]]; then
         if [[ -f "./autogen.sh" ]]; then
           if [[ -x "./autogen.sh" ]]; then
-            $SUDO ../$(basename $PWD).autogen
-            $SUDO ./autogen.sh --prefix=/usr $SHARED $STATIC
+            ../$(basename $PWD).autogen
+            ./autogen.sh --prefix=/usr $SHARED $STATIC
             if [[ -e "./configure" ]]; then
               if [[ -f "./configure" ]]; then
                 if [[ -x "./configure" ]]; then
-                  $SUDO touch ../$(basename $PWD).configure
-                  $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+                  touch ../$(basename $PWD).configure
+                  ./configure --prefix=/usr $SHARED $STATIC && make && make install
                 fi
               fi
             fi
@@ -87,29 +79,30 @@ function doDIRS () {
 done
 }
 
-function doIMNX () {
-  $SUDO make clean
-  $SUDO touch ../$(basename $PWD).clean
-  $SUDO make distclean
-  $SUDO touch ../$(basename $PWD).distclean
+function curdirMode () {
+  printf "Current directory mode selected. --curdir-mode\n"
+  make clean
+  touch ../$(basename $PWD).clean
+  make distclean
+  touch ../$(basename $PWD).distclean
   if [[ -e "./configure" ]]; then
     if [[ -f "./configure" ]]; then
       if [[ -x "./configure" ]]; then
-        $SUDO touch ../$(basename $PWD).configure
-        $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+        touch ../$(basename $PWD).configure
+        ./configure --prefix=/usr $SHARED $STATIC && make && make install
       fi
     fi
   else
     if [[ -e "./autogen.sh" ]]; then
       if [[ -f "./autogen.sh" ]]; then
         if [[ -x "./autogen.sh" ]]; then
-          $SUDO ../$(basename $PWD).autogen
-          $SUDO ./autogen.sh --prefix=/usr $SHARED $STATIC
+          ../$(basename $PWD).autogen
+          ./autogen.sh --prefix=/usr $SHARED $STATIC
           if [[ -e "./configure" ]]; then
             if [[ -f "./configure" ]]; then
               if [[ -x "./configure" ]]; then
-                $SUDO touch ../$(basename $PWD).configure
-                $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+                touch ../$(basename $PWD).configure
+                ./configure --prefix=/usr $SHARED $STATIC && make && make install
               fi
             fi
           fi
@@ -118,3 +111,13 @@ function doIMNX () {
     fi
   fi
 }
+
+if [[ $TIGGER_DODIRS == "1" ]]; then
+  TRIGGER_DODIRS="0"
+  dirMode
+fi
+
+if [[ $TRIGGER_DOIMNX == "1" ]]; then
+  TRIGGER_DOIMNX="0"
+  curdirMode
+fi
