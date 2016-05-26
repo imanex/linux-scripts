@@ -27,7 +27,7 @@ case $@ in
   --static) STATIC="--enable-static" ;;
   --sudo) SUDO="/usr/bin/sudo" ;;
   dirs) doDIRS ;;
-  curdir) doCURDIR ;;
+  curdir) doIMNX ;;
   *) printf "No GCC version argument supplied, using \'Default\'.\n" ;;
 esac
 
@@ -54,24 +54,48 @@ $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make inst
 function doDIRS () {
   for every in `find * -maxdepth 0 -type d`; do 
   cd $every
-  doIMNX "$every"
+    $SUDO make clean
+    $SUDO touch ../$(basename $PWD).clean
+    $SUDO make distclean
+    $SUDO touch ../$(basename $PWD).distclean
+    if [[ -e "./configure" ]]; then
+      if [[ -f "./configure" ]]; then
+        if [[ -x "./configure" ]]; then
+          $SUDO touch ../$(basename $PWD).configure
+          $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+        fi
+      fi
+    else
+      if [[ -e "./autogen.sh" ]]; then
+        if [[ -f "./autogen.sh" ]]; then
+          if [[ -x "./autogen.sh" ]]; then
+            $SUDO ../$(basename $PWD).autogen
+            $SUDO ./autogen.sh --prefix=/usr $SHARED $STATIC
+            if [[ -e "./configure" ]]; then
+              if [[ -f "./configure" ]]; then
+                if [[ -x "./configure" ]]; then
+                  $SUDO touch ../$(basename $PWD).configure
+                  $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
+                fi
+              fi
+            fi
+          fi
+        fi
+      fi
+    fi
   cd ..
 done
 }
 
-function doCURDIR () {
-  doIMNX $(basename $PWD)
-}
-
 function doIMNX () {
   $SUDO make clean
-  $SUDO touch ../$1.clean
+  $SUDO touch ../$(basename $PWD).clean
   $SUDO make distclean
-  $SUDO touch ../$1.distclean
+  $SUDO touch ../$(basename $PWD).distclean
   if [[ -e "./configure" ]]; then
     if [[ -f "./configure" ]]; then
       if [[ -x "./configure" ]]; then
-        $SUDO touch ../$1.configure
+        $SUDO touch ../$(basename $PWD).configure
         $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
       fi
     fi
@@ -79,12 +103,12 @@ function doIMNX () {
     if [[ -e "./autogen.sh" ]]; then
       if [[ -f "./autogen.sh" ]]; then
         if [[ -x "./autogen.sh" ]]; then
-          $SUDO ../$1.autogen
+          $SUDO ../$(basename $PWD).autogen
           $SUDO ./autogen.sh --prefix=/usr $SHARED $STATIC
           if [[ -e "./configure" ]]; then
             if [[ -f "./configure" ]]; then
               if [[ -x "./configure" ]]; then
-                $SUDO touch ../$1.configure
+                $SUDO touch ../$(basename $PWD).configure
                 $SUDO ./configure --prefix=/usr $SHARED $STATIC && $SUDO make && $SUDO make install
               fi
             fi
